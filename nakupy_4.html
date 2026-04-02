@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Porovnání cen potravin</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f3f3f1; --card: #fff; --text: #1a1a1a; --muted: #888; --border: #e6e6e6;
+  --green: #2e7d32; --green-bg: #e8f5e9; --green-light: #43a047;
+  --red: #c62828; --red-bg: #fff5f5;
+  --amber: #e65100; --amber-bg: #fff8e1;
+  --blue: #1565c0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); }
+
+header {
+  background: #111; color: #fff;
+  padding: 26px 32px 20px;
+  display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+}
+header h1 { font-family: 'Syne', sans-serif; font-size: clamp(1.4rem,4vw,2rem); font-weight: 800; letter-spacing: -0.03em; }
+.header-sub { font-size: 0.72rem; color: #777; margin-top: 4px; }
+
+.summary-bar {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(130px,1fr));
+  gap: 1px; background: var(--border);
+}
+.stat { background: #fff; padding: 12px 18px; }
+.stat .val { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; }
+.stat .lbl { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-top: 1px; }
+.val.g { color: var(--green); } .val.r { color: var(--red); } .val.a { color: var(--amber); }
+
+.toolbar {
+  padding: 12px 32px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  background: #fff; border-bottom: 1px solid var(--border);
+}
+.filter-btn {
+  padding: 5px 13px; border-radius: 20px; border: 1.5px solid var(--border);
+  background: transparent; font-family: 'DM Sans', sans-serif; font-size: 0.78rem;
+  font-weight: 500; cursor: pointer; transition: all 0.15s; color: var(--text);
+}
+.filter-btn:hover { border-color: #aaa; }
+.filter-btn.active { background: var(--text); border-color: var(--text); color: #fff; }
+.search-box {
+  margin-left: auto; padding: 5px 12px; border-radius: 20px;
+  border: 1.5px solid var(--border); font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem; outline: none; width: 160px;
+}
+.search-box:focus { border-color: #aaa; }
+
+main { padding: 18px 32px; max-width: 1400px; margin: 0 auto; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px,1fr)); gap: 12px; }
+
+.card {
+  background: var(--card); border-radius: 12px; border: 1.5px solid var(--border);
+  overflow: hidden; transition: box-shadow 0.2s, transform 0.15s;
+  animation: fadeIn 0.25s ease both;
+}
+.card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.07); transform: translateY(-2px); }
+@keyframes fadeIn { from { opacity:0; transform: translateY(5px); } to { opacity:1; transform:none; } }
+
+.card-head {
+  padding: 11px 14px 9px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+}
+.card-title { font-weight: 600; font-size: 0.88rem; line-height: 1.3; flex: 1; }
+.freq { background: #f0f0f0; color: var(--muted); font-size: 0.65rem; padding: 2px 7px; border-radius: 10px; font-weight: 500; white-space: nowrap; }
+
+.stores-list { padding: 6px 0; }
+.store-row {
+  display: grid; grid-template-columns: 110px 1fr auto;
+  align-items: center; gap: 6px;
+  padding: 5px 14px; border-bottom: 1px solid #f5f5f5;
+  transition: background 0.1s;
+}
+.store-row:last-child { border-bottom: none; }
+.store-row:hover { background: #fafafa; }
+.store-row.is-winner { background: var(--green-bg); }
+.store-row.is-winner:hover { background: #dcedc8; }
+.store-row.has-deal { background: var(--amber-bg); }
+.store-row.has-deal:hover { background: #fff0c2; }
+.store-row.is-winner.has-deal { background: linear-gradient(90deg, var(--green-bg), var(--amber-bg)); }
+
+.store-name {
+  font-size: 0.75rem; font-weight: 600; color: var(--muted);
+  display: flex; align-items: center; gap: 4px;
+}
+.store-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+.product-name { font-size: 0.7rem; color: #999; line-height: 1.3; }
+
+.price-cell { text-align: right; white-space: nowrap; }
+.price-val { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; }
+.price-amount { font-size: 0.65rem; color: var(--muted); display: block; }
+
+.badges { display: flex; gap: 3px; justify-content: flex-end; margin-top: 2px; }
+.badge {
+  font-size: 0.58rem; font-weight: 700; padding: 1px 5px; border-radius: 3px; white-space: nowrap;
+}
+.badge-winner { background: var(--green); color: #fff; }
+.badge-deal { background: var(--amber); color: #fff; }
+
+.card-footer {
+  padding: 7px 14px; border-top: 1px solid var(--border);
+  font-size: 0.7rem; color: var(--muted);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.saving { font-weight: 600; color: var(--green); }
+
+.empty { padding: 48px 32px; text-align: center; color: var(--muted); font-size: 0.9rem; }
+
+/* Store color dots */
+.dot-rohlik { background: #43a047; }
+.dot-kosik { background: #1e88e5; }
+.dot-lidl { background: #f57c00; }
+.dot-albert { background: #e53935; }
+.dot-billa { background: #8e24aa; }
+.dot-kaufland { background: #d50000; }
+.dot-tesco { background: #00579a; }
+.dot-penny { background: #c62828; }
+.dot-globus { background: #00838f; }
+.dot-makro { background: #1565c0; }
+.dot-coop { background: #2e7d32; }
+.dot-default { background: #9e9e9e; }
+
+@media (max-width: 600px) {
+  header, .toolbar, main { padding-left: 14px; padding-right: 14px; }
+  .summary-bar { grid-template-columns: 1fr 1fr; }
+  .grid { grid-template-columns: 1fr; }
+  .store-row { grid-template-columns: 90px 1fr auto; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div style="font-size:0.68rem;color:#555;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Nákupní přehled · TOP 20 produktů</div>
+    <h1>Porovnání cen napříč obchody</h1>
+    <div class="header-sub">Data: potravinka.cz + Rohlík MCP · Aktualizováno 2. 4. 2026</div>
+  </div>
+</header>
+
+<div class="summary-bar" id="summaryBar"></div>
+
+<div class="toolbar">
+  <button class="filter-btn active" data-filter="all">Vše</button>
+  <button class="filter-btn" data-filter="deal">V akci</button>
+  <button class="filter-btn" data-filter="spread">Největší rozdíl</button>
+  <input class="search-box" type="text" placeholder="🔍 Hledat produkt..." id="searchBox">
+</div>
+
+<main>
+  <div class="grid" id="grid"></div>
+</main>
+
+<script>
+// Barvy pro obchody
+const STORE_COLORS = {
+  'rohlik.cz': 'rohlik', 'Rohlik': 'rohlik',
+  'Kosik.cz': 'kosik', 'Košík': 'kosik',
+  'Lidl': 'lidl',
+  'Albert': 'albert',
+  'BILLA': 'billa', 'Billa': 'billa',
+  'Kaufland': 'kaufland',
+  'Tesco': 'tesco',
+  'Penny': 'penny', 'Penny Market': 'penny',
+  'Globus': 'globus',
+  'Makro': 'makro',
+  'COOP': 'coop',
+};
+
+const STORE_LABELS = {
+  'rohlik.cz': 'Rohlík', 'Kosik.cz': 'Košík',
+};
+
+function storeLabel(s) { return STORE_LABELS[s] || s; }
+function storeDot(s) { return `dot-${STORE_COLORS[s] || 'default'}`; }
+
+const fmt = p => p.toFixed(2).replace('.',',') + ' Kč';
+
+// Data ze všech zdrojů
+const products = [
+  {
+    name: "Okurka hadovka", freq: "5× / 5 obj.",
+    stores: [
+      {store:"rohlik.cz", name:"Okurka hadovka ~300g", price:19.9, origPrice:30.9, amount:"~300g"},
+      {store:"Kosik.cz",  name:"Okurka hadovka", price:14.9, amount:"250g"},
+      {store:"Makro",     name:"METRO Chef Okurka hadovka", price:24.53, amount:"250g"},
+      {store:"Lidl",      name:"Okurka salátová 🏷️", price:8.9, origPrice:24.9, amount:"1 ks", deal:true, validUntil:"2.–5. 4."},
+    ]
+  },
+  {
+    name: "Banány (cena / kg)", freq: "5× / 5 obj.",
+    stores: [
+      {store:"rohlik.cz", name:"Banány balení ~0,75 kg → 50,91 Kč/kg", price:50.91, amount:"/ kg"},
+      {store:"Kosik.cz",  name:"Banán 1 ks ~180g → 58,22 Kč/kg", price:58.22, amount:"/ kg"},
+      {store:"Penny",     name:"Banány 1 kg", price:16.9, amount:"/ kg"},
+      {store:"Kaufland",  name:"Banány 1 kg", price:21.9, amount:"/ kg"},
+      {store:"Albert",    name:"Banány červené 1 kg", price:49.9, amount:"/ kg"},
+    ]
+  },
+  {
+    name: "Ledový salát", freq: "4× / 5 obj.",
+    stores: [
+      {store:"rohlik.cz", name:"Ledový salát 1 ks 300g", price:35.9, amount:"300g"},
+      {store:"Kosik.cz",  name:"Salát ledový 1 ks", price:49.9, amount:"1 ks"},
+      {store:"BILLA",     name:"Ledový salát", price:27.9, amount:"1 ks"},
+    ]
+  },
+  {
+    name: "Toustový chléb celozrnný", freq: "4× / 5 obj.",
+    stores: [
+      {store:"rohlik.cz", name:"Ölz Super soft sandwich 0,75 kg", price:70.9, amount:"750g"},
+      {store:"Kosik.cz",  name:"Penam Super Sandwich celozrnný", price:52.9, amount:"500g"},
+      {store:"Tesco",     name:"Toustový chléb celozrnný", price:29.9, amount:"500g"},
+    ]
+  },
+  {
+    name: "Mléko polotučné bez laktózy", freq: "4× / 5 obj.",
+    stores: [
+      {store:"rohlik.cz", name:"Miil Trvanlivé mléko 1,5% b.l. 1l", price:17.91, origPrice:19.9, amount:"1 l"},
+      {store:"Kosik.cz",  name:"Pragolaktos Polotučné mléko b.l.", price:26.9, amount:"1 l"},
+    ]
+  },
+  {
+    name: "Selský jogurt bílý", freq: "3× / 5 obj.",
+    stores: [
+      {store:"rohlik.cz", name:"Hollandia Selský jogurt bílý 500g", price:32.9, amount:"500g"},
+      {store:"Kosik.cz",  name:"Přímo z farmy Selský jogurt", price:24.9, amount:"450g"},
+      {store:"BILLA",     name:"Hollandia Selský jogurt bílý", price:27.9, amount:"500g"},
+      {store:"Albert",    name:"Hollandia Selský jogurt bílý", price:29.9, amount:"500g"},
+    ]
+  },
+  {
+    name: "Zlaté Věnečky kakaové", freq: "3× / 5 obj.",
+    stores: [
+      {store:"rohlik.cz", name:"Opavia Zlaté Věnečky kakaové 150g", price:39.9, amount:"150g"},
+      {store:"Kosik.cz",  name:"Opavia Zlaté Věnečky kakaové", price:39.9, amount:"150g"},
+      {store:"Kaufland",  name:"Opavia Zlaté Věnečky kakaové", price:34.9, amount:"150g"},
+      {store:"Albert",    name:"Opavia Zlaté Věnečky kakaové", price:36.9, amount:"150g"},
+      {store:"Tesco",     name:"Opavia Zlaté Věnečky kakaové", price:35.9, amount:"150g"},
+    ]
+  },
+  {
+    name: "Špenátové listy Bonduelle", freq: "3× / 5 obj.",
+    stores: [
+      {store:"rohlik.cz", name:"Bonduelle Špenátové listy 400g", price:45.9, amount:"400g"},
+      {store:"Kosik.cz",  name:"Bonduelle Špenátové listy", price:42.9, amount:"400g"},
+      {store:"Kaufland",  name:"Bonduelle Špenátové listy", price:39.9, amount:"400g"},
+      {store:"Albert",    name:"Bonduelle Špenátové listy", price:41.9, amount:"400g"},
+      {store:"Tesco",     name:"Bonduelle Špenátové listy", price:38.9, amount:"400g"},
+    ]
+  },
+  {
+    name: "Hrozny bílé bezsemenné", freq: "3× / 5 obj.",
+    stores: [
+      {store:"rohlik.cz", name:"Hrozny bílé bezsemenné 500g", price:53.16, origPrice:70.9, amount:"500g"},
+      {store:"Kosik.cz",  name:"Hrozny bílé bezsemenné", price:59.9, amount:"500g"},
+      {store:"Lidl",      name:"Tmavé hrozny bezsemenné 🏷️", price:27.9, origPrice:69.9, amount:"500g", deal:true, validUntil:"2.–5. 4."},
+    ]
+  },
+  {
+    name: "Jablka červená (/ kg)", freq: "3× / 5 obj.",
+    stores: [
+      {store:"rohlik.cz", name:"Jablko červené malé ~130g → 36,46 Kč/kg", price:36.46, amount:"/ kg"},
+      {store:"Kosik.cz",  name:"Jablko Gala ~160g → 32,90 Kč/kg", price:32.9, amount:"/ kg"},
+      {store:"BILLA",     name:"Jablko červené", price:28.9, amount:"/ kg"},
+      {store:"Albert",    name:"Jablko červené", price:29.9, amount:"/ kg"},
+      {store:"Kaufland",  name:"Jablko červené", price:27.9, amount:"/ kg"},
+      {store:"Tesco",     name:"Jablko červené", price:30.9, amount:"/ kg"},
+    ]
+  },
+  {
+    name: "Máslo 82%", freq: "3× / 5 obj.",
+    stores: [
+      {store:"rohlik.cz", name:"Miil Máslo 82% 250g", price:40.41, origPrice:44.9, amount:"250g"},
+      {store:"Kosik.cz",  name:"Fine Life Máslo 82% 250g", price:44.9, amount:"250g"},
+      {store:"Kaufland",  name:"Máslo 82% 250g", price:36.9, amount:"250g"},
+      {store:"Albert",    name:"Máslo 82% 250g", price:38.9, amount:"250g"},
+      {store:"BILLA",     name:"Máslo 82% 250g", price:39.9, amount:"250g"},
+      {store:"Tesco",     name:"Máslo 82% 250g", price:37.9, amount:"250g"},
+      {store:"Penny",     name:"Máslo 82% 250g", price:35.9, amount:"250g"},
+    ]
+  },
+  {
+    name: "Krémový jogurt bílý b.l.", freq: "3× / 5 obj.",
+    stores: [
+      {store:"rohlik.cz", name:"Hollandia Krémový jogurt 0,01% laktózy 400g", price:34.9, amount:"400g"},
+      {store:"Kosik.cz",  name:"Hollandia Krémový jogurt bílý b.l.", price:32.9, amount:"400g"},
+      {store:"BILLA",     name:"Hollandia Krémový jogurt bílý", price:29.9, amount:"400g"},
+      {store:"Albert",    name:"Hollandia Krémový jogurt bílý", price:31.9, amount:"400g"},
+    ]
+  },
+  {
+    name: "Paprika žlutá", freq: "3× / 5 obj.",
+    stores: [
+      {store:"rohlik.cz", name:"Paprika žlutá 1 ks ~270g", price:33.72, amount:"~270g"},
+      {store:"Kosik.cz",  name:"Paprika žlutá 1 ks ~300g", price:41.97, amount:"~300g"},
+      {store:"Globus",    name:"Paprika žlutá", price:26.38, amount:"~300g"},
+      {store:"Tesco",     name:"Paprika žlutá ~1kg", price:28.78, amount:"~300g"},
+    ]
+  },
+  {
+    name: "Rajče na větvičce", freq: "3× / 5 obj.",
+    stores: [
+      {store:"rohlik.cz", name:"Rajče kulaté na větvičce ~130g", price:12.99, amount:"~130g"},
+      {store:"Kosik.cz",  name:"Rajče kulaté na větvičce", price:13.9, amount:"~130g"},
+      {store:"Kaufland",  name:"Rajče na větvičce", price:9.9, amount:"~130g"},
+      {store:"Albert",    name:"Rajče na větvičce", price:11.9, amount:"~130g"},
+      {store:"Penny",     name:"Rajče na větvičce", price:10.9, amount:"~130g"},
+    ]
+  },
+  {
+    name: "Pomeranč", freq: "3× / 5 obj.",
+    stores: [
+      {store:"rohlik.cz", name:"Pomeranč 1 ks ~290g", price:14.47, amount:"~290g"},
+      {store:"Kosik.cz",  name:"Pomeranč 1 ks", price:12.9, amount:"~250g"},
+      {store:"Kaufland",  name:"Pomeranč 1 ks", price:9.9, amount:"~250g"},
+      {store:"Albert",    name:"Pomeranč 1 ks", price:11.9, amount:"~250g"},
+      {store:"Penny",     name:"Pomeranč 1 ks", price:10.9, amount:"~250g"},
+    ]
+  },
+  {
+    name: "Cherry rajčata", freq: "3× / 5 obj.",
+    stores: [
+      {store:"rohlik.cz", name:"Joyn koktejlová rajčata 400g", price:99.9, amount:"400g"},
+      {store:"Kosik.cz",  name:"Cherry rajčata", price:49.9, amount:"400g"},
+      {store:"Albert",    name:"Cherry rajčata 250g", price:39.9, amount:"250g"},
+      {store:"Kaufland",  name:"Cherry rajčata 250g", price:34.9, amount:"250g"},
+      {store:"Tesco",     name:"Cherry rajčata 250g", price:37.9, amount:"250g"},
+    ]
+  },
+  {
+    name: "Švestky kompot Alibona", freq: "3× / 5 obj.",
+    stores: [
+      {store:"rohlik.cz", name:"Alibona Švestky kompot 180g", price:45.9, amount:"180g"},
+      {store:"Kosik.cz",  name:"Alibona Švestky kompot", price:29.9, amount:"180g"},
+      {store:"Albert",    name:"Alibona Švestky kompot 550g", price:39.9, amount:"550g"},
+      {store:"Kaufland",  name:"Alibona Švestky kompot 550g", price:35.9, amount:"550g"},
+    ]
+  },
+  {
+    name: "Okurky delikates 3–6 cm", freq: "2× / 5 obj.",
+    stores: [
+      {store:"rohlik.cz", name:"Efko Okurky delikates 3-6 cm", price:45.9, amount:"670g"},
+      {store:"Kosik.cz",  name:"Efko Okurky delikates 3-6cm", price:89.9, amount:"670g"},
+      {store:"Kaufland",  name:"Efko Okurky delikates 5-8cm 720ml", price:77.9, amount:"720ml"},
+      {store:"Tesco",     name:"Giana Okurky delikatesní 670g", price:56.9, amount:"670g"},
+    ]
+  },
+  {
+    name: "Tvaroh polotučný", freq: "2× / 5 obj.",
+    stores: [
+      {store:"rohlik.cz", name:"Milko Tvaroh polotučný 250g", price:29.9, amount:"250g"},
+      {store:"Kosik.cz",  name:"Tatra Tvaroh polotučný 18%", price:31.9, amount:"250g"},
+      {store:"Kaufland",  name:"Milko Tvaroh polotučný 250g", price:18.9, amount:"250g"},
+      {store:"Globus",    name:"Milko Tvaroh polotučný 250g", price:18.9, amount:"250g"},
+      {store:"COOP",      name:"Tvaroh polotučný 250g", price:17.9, amount:"250g"},
+      {store:"Albert",    name:"Tatra Tvaroh polotučný 250g", price:23.9, amount:"250g"},
+    ]
+  },
+  {
+    name: "Vanilkový cukr", freq: "2× / 5 obj.",
+    stores: [
+      {store:"rohlik.cz", name:"Dr.Oetker Vanilkový cukr 3×8g", price:20.9, origPrice:28.9, amount:"24g"},
+      {store:"Kosik.cz",  name:"Dr. Oetker Vanilkový cukr 3ks", price:28.9, amount:"24g"},
+      {store:"BILLA",     name:"Dr. Oetker Vanilkový cukr 8g", price:6.9, amount:"8g"},
+      {store:"Globus",    name:"Váš Výběr Vanilkový cukr 8g", price:3.9, amount:"8g"},
+      {store:"Tesco",     name:"Vanilkový cukr 8g", price:4.9, amount:"8g"},
+    ]
+  },
+];
+
+// --- Render ---
+function getWinner(stores) {
+  return stores.reduce((a, b) => a.price <= b.price ? a : b);
+}
+
+function buildSummary() {
+  let deals = 0, totalSaving = 0, storeSet = new Set();
+  products.forEach(p => {
+    p.stores.forEach(s => { storeSet.add(s.store); if (s.deal) deals++; });
+    if (p.stores.length > 1) {
+      const prices = p.stores.map(s => s.price);
+      totalSaving += Math.max(...prices) - Math.min(...prices);
+    }
+  });
+  document.getElementById('summaryBar').innerHTML = [
+    {val: products.length, lbl: 'Produktů', cls:''},
+    {val: storeSet.size,   lbl: 'Obchodů', cls:'g'},
+    {val: deals,           lbl: 'V akci / letáku', cls:'a'},
+    {val: Math.round(totalSaving) + ' Kč', lbl: 'Max. úspora', cls:'g'},
+  ].map(s => `<div class="stat"><div class="val ${s.cls}">${s.val}</div><div class="lbl">${s.lbl}</div></div>`).join('');
+}
+
+function buildCards(filter, search) {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  let count = 0;
+
+  const filtered = products.filter(p => {
+    if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filter === 'deal') return p.stores.some(s => s.deal || s.origPrice);
+    if (filter === 'spread') {
+      const prices = p.stores.map(s => s.price);
+      return (Math.max(...prices) - Math.min(...prices)) > 10;
+    }
+    return true;
+  });
+
+  // Sort spread by biggest difference
+  if (filter === 'spread') {
+    filtered.sort((a, b) => {
+      const spreadA = Math.max(...a.stores.map(s=>s.price)) - Math.min(...a.stores.map(s=>s.price));
+      const spreadB = Math.max(...b.stores.map(s=>s.price)) - Math.min(...b.stores.map(s=>s.price));
+      return spreadB - spreadA;
+    });
+  }
+
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="empty">Žádné produkty nevyhovují filtru.</div>';
+    return;
+  }
+
+  filtered.forEach((p, i) => {
+    const winner = getWinner(p.stores);
+    const prices = p.stores.map(s => s.price);
+    const maxPrice = Math.max(...prices);
+    const saving = maxPrice - winner.price;
+    const storesSorted = [...p.stores].sort((a, b) => a.price - b.price);
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.animationDelay = (count * 0.03) + 's';
+
+    const rowsHtml = storesSorted.map(s => {
+      const isWinner = s.price === winner.price;
+      const hasDeal = !!(s.deal || s.origPrice);
+      const cls = `store-row${isWinner ? ' is-winner' : ''}${hasDeal ? ' has-deal' : ''}`;
+      const badges = [
+        isWinner ? '<span class="badge badge-winner">Nejlevnější</span>' : '',
+        s.deal ? `<span class="badge badge-deal">Leták ${s.validUntil}</span>` : '',
+        s.origPrice ? `<span class="badge badge-deal">Sleva</span>` : '',
+      ].join('');
+      return `
+        <div class="${cls}">
+          <div class="store-name">
+            <div class="store-dot ${storeDot(s.store)}"></div>
+            ${storeLabel(s.store)}
+          </div>
+          <div class="product-name">${s.name}${s.origPrice ? ` <span style="text-decoration:line-through;color:#bbb">${fmt(s.origPrice)}</span>` : ''}</div>
+          <div class="price-cell">
+            <span class="price-val">${fmt(s.price)}</span>
+            <div class="badges">${badges}</div>
+          </div>
+        </div>`;
+    }).join('');
+
+    const footerHtml = saving > 0.5
+      ? `<div class="card-footer"><span>Úspora oproti nejdražšímu</span><span class="saving">${fmt(saving)}</span></div>`
+      : '';
+
+    card.innerHTML = `
+      <div class="card-head">
+        <div class="card-title">${p.name}</div>
+        <div class="freq">${p.freq}</div>
+      </div>
+      <div class="stores-list">${rowsHtml}</div>
+      ${footerHtml}
+    `;
+    grid.appendChild(card);
+    count++;
+  });
+
+  // Update filter counts
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    if (btn.dataset.filter === filter) {
+      btn.textContent = btn.textContent.replace(/\s*\(\d+\)/, '') + ` (${count})`;
+    }
+  });
+}
+
+// Events
+let currentFilter = 'all';
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => { b.classList.remove('active'); b.textContent = b.textContent.replace(/\s*\(\d+\)/, ''); });
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    buildCards(currentFilter, document.getElementById('searchBox').value);
+  });
+});
+document.getElementById('searchBox').addEventListener('input', e => {
+  buildCards(currentFilter, e.target.value);
+});
+
+buildSummary();
+buildCards('all', '');
+</script>
+</body>
+</html>
