@@ -1,16 +1,20 @@
 # nakupy
 
-Osobní nákupní agent pro Rohlik.cz postavený na Claude Code a [oficiálním Rohlík MCP serveru](https://www.rohlik.cz/stranka/mcp-server)
-+ statický přehled cen (`index.html`).
+Agenti pro domácí nákupy postavení na Claude Code. Zatím jeden:
+
+| Agent | Příkaz | Co dělá |
+|---|---|---|
+| Rohlík – košík | `/rohlik-kosik` | Zjistí z kalendáře, kdy jsme doma, navrhne termín doručení, připraví košík, doptá se. Neobjednává. |
 
 ## Zprovoznění
-1. V tomhle adresáři spusť `claude`. Server `rohlik` se načte z `.mcp.json` (potvrď důvěru).
-2. Spusť `/mcp`, vyber `rohlik` a přihlas se svým účtem Rohlíku (OAuth).
-3. Vyplň `preference.md` a `seznam.md`.
-4. Napiš `/nakup` (nebo třeba `/nakup jako minule + pivo`).
+1. Lokálně v tomhle adresáři spusť `claude` (server `rohlik` se načte z `.mcp.json`, potvrď důvěru).
+2. `/mcp` → `rohlik` → přihlásit se účtem Rohlíku.
+3. Google Calendar: když jsi v Claude Code přihlášený účtem claude.ai s připojeným Google Calendar
+   konektorem, je dostupný i tady (ověř v `/mcp`).
+4. Vyplň `domacnost.md`, pak `/rohlik-kosik` (např. `/rohlik-kosik jako minule + pivo`).
 
-Agent naplní košík a vypíše shrnutí. Objednávku a platbu dokončuješ sám v aplikaci Rohlíku.
+## Přidání dalšího agenta
+Nový skill v `.claude/skills/<obchod>-<úloha>/SKILL.md`, sdílený kontext bere z `domacnost.md`,
+společná pravidla z `CLAUDE.md`. Řádek do tabulky výše.
 
-## Bez kódu
-Stejný server jde přidat i v Claude Desktop / claude.ai: Nastavení → Konektory → Přidat vlastní
-konektor, název `Rohlik`, URL `https://mcp.rohlik.cz/mcp`.
+Staré věci jsou v `archiv/` (kandidáti na smazání).

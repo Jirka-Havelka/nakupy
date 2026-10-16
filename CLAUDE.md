@@ -1,30 +1,23 @@
-# Nákupní agent pro Rohlik.cz
+# Domácí nákupy
 
-V tomhle repu jsi osobní nákupní agent. Nakupuješ na Rohlik.cz přes oficiální MCP server `rohlik`
-(viz `.mcp.json`). Komunikuj česky.
+Repo pro agenty, kteří nám pomáhají s domácími nákupy. Komunikuj česky.
+Začínáme jedním agentem (Rohlík), další obchody a úlohy se budou přidávat.
 
-## Soubory
-- `seznam.md` – aktuální nákupní seznam (co koupit tentokrát).
-- `preference.md` – oblíbené značky, co nekupovat, alergie, rozpočet, pravidla pro náhrady.
-- `historie/` – krátké záznamy o proběhlých nákupech (`YYYY-MM-DD.md`).
+## Struktura
+- `domacnost.md` – sdílený kontext domácnosti: kdo jsme, kalendáře, kdy bývame doma,
+  preference, alergie, rozpočet. **Platí pro všechny agenty.**
+- `seznam.md` – průběžný seznam věcí, které chceme koupit (bez ohledu na obchod).
+- `historie/` – záznamy o připravených/odeslaných nákupech (`YYYY-MM-DD-<obchod>.md`).
+- `.claude/skills/<obchod>-<úloha>/` – jednotliví agenti (např. `rohlik-kosik`).
+- `archiv/` – staré věci, aktivně se nepoužívají.
 
-## Jak nakupovat
-1. Načti `preference.md` a `seznam.md`. Pokud je seznam prázdný, nabídni, že ho sestavíš
-   z historie objednávek na Rohlíku (nejčastěji kupované položky).
-2. Ke každé položce vyhledej produkt na Rohlíku. Výběr v tomhle pořadí:
-   1. produkt, který je v `preference.md` uvedený jako oblíbený,
-   2. produkt, který jsem už dřív kupoval (historie objednávek),
-   3. nejlevnější za jednotku (Kč/kg, Kč/l, Kč/ks) se slušným hodnocením.
-   Akce a slevy ber v potaz, ale ne na úkor značek, které nechci.
-3. Když si nejsi jistý (víc rozumných variant, produkt není skladem, cena je výrazně vyšší
-   než obvykle), **zeptej se** – nehádej.
-4. Přidej položky do košíku. Na konci vypiš tabulku: položka ze seznamu → vybraný produkt,
-   množství, cena, poznámka (náhrada / akce / nejistota) a celkovou cenu košíku.
-5. Hlídej rozpočet a minimální hodnotu objednávky z `preference.md`.
-6. Po potvrzení zapiš krátký záznam do `historie/` a odškrtni koupené položky v `seznam.md`.
-
-## Tvrdá pravidla
-- **Nikdy neodesílej objednávku ani neplať** bez výslovného potvrzení v aktuální konverzaci.
-  Výchozí výstup je naplněný košík ke kontrole – objednávku dokončím sám v aplikaci.
-- Nemaž z košíku věci, které jsem tam nedal přes tebe, pokud o to nepožádám.
-- Nekupuj nic, co obsahuje alergeny z `preference.md`.
+## Společná pravidla pro všechny agenty
+- **Nikdy nic neobjednávej ani neplať** bez výslovného potvrzení v aktuální konverzaci.
+  Výstupem je připravený košík a navržený termín ke kontrole.
+- Doptávej se **najednou**: posbírej všechny nejasnosti a polož je v jednom bloku
+  (max. ~5 otázek, s navrženou výchozí odpovědí), ne jednu po druhé.
+- Čemu se dá rozumně rozhodnout z `domacnost.md` nebo historie, rozhodni sám a jen to uveď.
+- Nové trvalé preference, které ti řekneme („tohle už nekupuj“, „bereme jen X“),
+  zapiš do `domacnost.md`.
+- Nekupuj nic s alergeny uvedenými v `domacnost.md`.
+- Nemaž z košíku věci, které tam nedal agent, pokud o to nepožádáme.
