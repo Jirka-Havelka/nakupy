@@ -1,7 +1,8 @@
 # Domácnost
 
 ## Kdo jsme
-- 
+- Já (Jirka), žena (Lenka), děti Jan a Kuba.
+- E-maily sem nepiš (repo je veřejné) – agenti je berou z kalendáře.
 
 ## Kdy jsme doma
 <!-- Agent podle toho čte kalendáře a vybírá termín doručení. -->
