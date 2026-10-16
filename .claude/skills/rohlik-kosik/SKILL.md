@@ -1,6 +1,6 @@
 ---
 name: rohlik-kosik
-description: Připraví košík na Rohlik.cz, zarezervuje termín doručení podle toho, kdy jsme doma (Google Calendar), a dá odkaz na pokladnu. Použij, když chceme nakoupit na Rohlíku, doplnit košík nebo zopakovat nákup. Objednávku neodesílá.
+description: Připraví košík na Rohlik.cz, zarezervuje termín doručení podle toho, kdy jsme doma (Google Calendar), dá odkaz na pokladnu a po odeslání pošle rodině pozvánku na doručení. Použij, když chceme nakoupit na Rohlíku, doplnit košík nebo zopakovat nákup. Objednávku neodesílá.
 ---
 
 Cíl: za pár minut mít naplněný košík, zarezervovaný termín a odkaz na pokladnu,
@@ -53,3 +53,15 @@ Použij `AskUserQuestion` (dobře se ovládá i na mobilu):
    (co už tam bylo / co je nové), celková cena, odkaz.
 4. Po „odesláno“: ověř přes `fetch_orders` (upcoming), zapiš `historie/YYYY-MM-DD-rohlik.md`
    (číslo objednávky, termín, položky, cena – **bez adresy**) a odškrtni koupené v `seznam.md`.
+5. Pošli pozvánku do kalendáře (Google Calendar `create_event`, viz níže).
+
+## Pozvánka na doručení
+- Komu: najdi v kalendáři poslední událost „🛒 Rohlík – doručení nákupu“ a pozvi stejné lidi
+  (já + žena + děti). **E-maily nikdy nezapisuj do repa** – je veřejné.
+  Když předchozí událost nenajdeš, zeptej se na e-maily.
+- Název `🛒 Rohlík – doručení nákupu`, čas = slot doručení, `availability: AVAILABILITY_FREE`,
+  připomenutí popup večer předem v 19:00 a 30 min před.
+- Popis: kurýr před příjezdem volá, někdo musí být doma; číslo objednávky, počet položek a cena;
+  stručný seznam položek po skupinách; „maso a mléčné hned do lednice“ (jen když tam jsou);
+  odkaz `https://www.rohlik.cz/uzivatel/objednavky?orderId=<id>`. Bez adresy.
+- Když se termín doručení později změní, uprav událost, nevytvářej novou.
